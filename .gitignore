@@ -1,0 +1,17 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Logs / temp
+*.log
+
+# WSL alternate-data-stream artifacts
+*:Zone.Identifier
+
+# Source-of-truth docs are the Markdown versions in docs/;
+# keep the original .docx and prototype locally but don't commit them
+*.docx
+pmp_exam_sim.html

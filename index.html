@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PMP Exam Simulator</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">PMP<span> // </span>Exam Simulator</div>
+  <div class="timer-wrap" id="timer">—:——</div>
+</header>
+
+<!-- START SCREEN -->
+<div class="start-screen" id="startScreen">
+  <div class="start-title">PMP Practice Exam</div>
+  <div class="start-subtitle">AI-generated questions · People · Process · Business Environment</div>
+
+  <!-- CONFIG: API access -->
+  <div class="config-card">
+    <div class="cc-title">Connect to Claude</div>
+    <div class="cc-hint">
+      This app generates questions with Anthropic's Claude API. Use your own API key
+      (<a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">get one here</a>),
+      or point it at a proxy you host. Your key is stored only in this browser (localStorage) and sent
+      directly to Anthropic — never to any other server.
+    </div>
+    <div class="field">
+      <label for="apiKeyInput">Anthropic API key</label>
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+      <div class="field-note">Stored locally in your browser. Leave blank if using a proxy URL below.</div>
+    </div>
+    <div class="field">
+      <label for="proxyUrlInput">Proxy URL (optional)</label>
+      <input type="text" id="proxyUrlInput" placeholder="https://your-proxy.example.com/v1/messages" autocomplete="off" spellcheck="false">
+      <div class="field-note">If set, requests go here instead of directly to Anthropic, and no key is sent from the browser. For self-hosters running a backend that injects the key.</div>
+    </div>
+  </div>
+
+  <div class="start-grid">
+    <div class="start-domain people">
+      <div class="sd-pct" id="sd-people">42%</div>
+      <div class="sd-name">People</div>
+      <div class="sd-desc">Leadership, conflict, EQ, team building, stakeholder engagement</div>
+    </div>
+    <div class="start-domain process">
+      <div class="sd-pct" id="sd-process">50%</div>
+      <div class="sd-name">Process</div>
+      <div class="sd-desc">Risk, schedule, scope, quality, procurement, EVM, change management</div>
+    </div>
+    <div class="start-domain biz">
+      <div class="sd-pct" id="sd-business">8%</div>
+      <div class="sd-name">Business Environment</div>
+      <div class="sd-desc">Compliance, benefits realization, org change, strategic alignment</div>
+    </div>
+  </div>
+
+  <!-- CONFIG: domain mix -->
+  <div class="config-card">
+    <div class="cc-title">Domain mix</div>
+    <div class="cc-hint">How questions are distributed across the three PMP domains. Defaults match the real exam (42 / 50 / 8). Values are normalized, so they don't have to sum to exactly 100.</div>
+    <div class="mix-row">
+      <div class="mix-cell people field">
+        <label for="mixPeople">People</label>
+        <input type="number" id="mixPeople" min="0" max="100" value="42">
+      </div>
+      <div class="mix-cell process field">
+        <label for="mixProcess">Process</label>
+        <input type="number" id="mixProcess" min="0" max="100" value="50">
+      </div>
+      <div class="mix-cell biz field">
+        <label for="mixBusiness">Business Env</label>
+        <input type="number" id="mixBusiness" min="0" max="100" value="8">
+      </div>
+    </div>
+    <div class="mix-total" id="mixTotal">Total: 100</div>
+  </div>
+
+  <div class="section-label">Session length</div>
+  <div class="start-options" id="lengthOptions">
+    <button class="opt-btn active" data-val="10">10 questions</button>
+    <button class="opt-btn" data-val="20">20 questions</button>
+    <button class="opt-btn" data-val="40">40 questions</button>
+    <button class="opt-btn" data-val="175">Full (175)</button>
+  </div>
+
+  <div class="section-label">Model</div>
+  <div class="start-options" id="modelOptions">
+    <button class="opt-btn active" data-val="claude-sonnet-4-6">Sonnet 4.6 — $3/$15 per M · best quality</button>
+    <button class="opt-btn" data-val="claude-haiku-4-5-20251001">Haiku 4.5 — $1/$5 per M · ~4× cheaper</button>
+  </div>
+
+  <div class="section-label">Approach focus</div>
+  <div class="start-options" id="approachOptions">
+    <button class="opt-btn active" data-val="mixed">Mixed (Predictive, Agile, Hybrid)</button>
+    <button class="opt-btn" data-val="predictive">Predictive</button>
+    <button class="opt-btn" data-val="agile">Agile/Scrum</button>
+    <button class="opt-btn" data-val="hybrid">Hybrid</button>
+  </div>
+
+  <div class="error-box hidden" id="startError" style="margin-bottom:16px;"></div>
+  <button class="btn btn-primary" id="startBtn" style="font-size:15px;padding:13px 40px;margin-top:8px;">Start Exam</button>
+</div>
+
+<!-- EXAM SCREEN -->
+<div id="examScreen" class="hidden" style="width:100%;max-width:860px;display:flex;flex-direction:column;align-items:center;">
+  <div class="progress-row">
+    <div class="progress-meta">
+      <span id="progressLabel">Question 1 of 10</span>
+      <span id="scoreLabel">Score: 0</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+
+  <div class="score-row">
+    <div class="score-card people">
+      <div class="sc-label">People</div>
+      <div class="sc-val" id="sc-people">—</div>
+      <div class="sc-sub" id="sc-people-sub">0 of 0</div>
+    </div>
+    <div class="score-card process">
+      <div class="sc-label">Process</div>
+      <div class="sc-val" id="sc-process">—</div>
+      <div class="sc-sub" id="sc-process-sub">0 of 0</div>
+    </div>
+    <div class="score-card biz">
+      <div class="sc-label">Biz Env</div>
+      <div class="sc-val" id="sc-biz">—</div>
+      <div class="sc-sub" id="sc-biz-sub">0 of 0</div>
+    </div>
+  </div>
+
+  <div id="loadingWrap" class="loading-wrap">
+    <div class="spinner"></div>
+    <span id="loadingMsg">Generating question...</span>
+  </div>
+
+  <div id="questionWrap" class="hidden" style="width:100%">
+    <div class="question-card">
+      <div id="domainBadge" class="domain-badge people">● People</div>
+      <div class="q-type-label" id="qTypeLabel">Multiple Choice</div>
+      <div class="q-number" id="qNumber">Q1</div>
+      <div class="q-text" id="qText"></div>
+      <div class="multi-hint hidden" id="multiHint">⚠ Select ALL that apply</div>
+      <div id="choicesWrap"></div>
+      <div class="rationale" id="rationale">
+        <div class="rat-head">Rationale</div>
+        <div id="rationaleText"></div>
+      </div>
+    </div>
+    <div class="btn-row" id="btnRow" style="justify-content: space-between;">
+      <button class="btn btn-danger" id="endBtn">End Exam</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-primary hidden" id="submitBtn">Submit Answer</button>
+        <button class="btn btn-secondary hidden" id="nextBtn">Next Question →</button>
+        <button class="btn btn-secondary hidden" id="skipBtn">Skip</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="errorWrap" class="hidden">
+    <div class="error-box" id="errorMsg"></div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-primary" id="retryBtn">Retry</button>
+      <button class="btn btn-secondary" id="endBtn2">End Exam</button>
+    </div>
+  </div>
+</div>
+
+<!-- END SCREEN -->
+<div class="end-screen" id="endScreen">
+  <div class="end-title" id="endTitle">Exam Complete</div>
+  <div id="endRating" class="end-rating"></div>
+
+  <div class="end-score-grid" id="endScoreGrid">
+    <div class="score-card total">
+      <div class="sc-label">Overall</div>
+      <div class="sc-val" id="end-total">0%</div>
+      <div class="sc-sub" id="end-total-sub"></div>
+    </div>
+    <div class="score-card people">
+      <div class="sc-label">People</div>
+      <div class="sc-val" id="end-people">—</div>
+      <div class="sc-sub" id="end-people-sub"></div>
+    </div>
+    <div class="score-card process">
+      <div class="sc-label">Process</div>
+      <div class="sc-val" id="end-process">—</div>
+      <div class="sc-sub" id="end-process-sub"></div>
+    </div>
+    <div class="score-card biz">
+      <div class="sc-label">Biz Env</div>
+      <div class="sc-val" id="end-biz">—</div>
+      <div class="sc-sub" id="end-biz-sub"></div>
+    </div>
+  </div>
+
+  <div class="btn-row" style="margin-bottom:28px">
+    <button class="btn btn-primary" id="restartBtn">New Exam</button>
+    <button class="btn btn-secondary" id="reviewBtn">Review Answers ↓</button>
+  </div>
+
+  <div class="review-section hidden" id="reviewSection"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

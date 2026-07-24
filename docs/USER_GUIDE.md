@@ -4,7 +4,7 @@
 
 ## What This Tool Does
 
-The PMP Exam Simulator generates realistic, scenario-based practice questions modeled on the PMI Exam Content Outline (ECO). Each question is created fresh by an AI model (Anthropic's Claude) when you take it — there is no fixed question bank, so no two sessions are exactly alike.
+The PMP Exam Simulator generates realistic, scenario-based practice questions modeled on the PMI Exam Content Outline (ECO). Each question is created fresh by an AI model — your choice of Anthropic Claude, Google Gemini, or Groq — when you take it. There is no fixed question bank, so no two sessions are exactly alike.
 
 By default it covers all three PMP exam domains in the same proportions as the real exam (you can change this — see *Domain mix* below):
 
@@ -29,18 +29,30 @@ python3 -m http.server
 
 > If you open the file from inside a cloud-drive preview pane, it may show only a static page. Download the files first and open your local copy (or serve the folder) for full interactivity.
 
-### Connecting to Claude (one-time setup)
+### Connecting to an AI provider (one-time setup)
 
-Because questions are generated live, the app needs access to Anthropic's Claude API. You have two options, set on the start screen:
+Because questions are generated live, the app needs access to an AI model. Pick a provider on the start screen, then connect to it one of two ways:
 
-1. **Your own API key (simplest).** Get a key from the [Anthropic Console](https://console.anthropic.com/settings/keys) and paste it into the **Anthropic API key** field. Your key is stored only in your browser and sent directly to Anthropic — never to anyone else.
+1. **Your own API key (simplest).** Get a key from your chosen provider's console and paste it into the API key field. It's sent directly to that provider — never to anyone else — and you choose whether to save it in your browser for next time (see *Saving your key* below).
 2. **A proxy URL (for self-hosters).** If you or your team runs a small backend that holds the key, enter its address in the **Proxy URL** field. The app then sends requests there instead, and no key leaves your browser.
 
-Your settings are remembered between visits, so you only enter them once per browser.
+Settings are remembered per provider between visits, so switching providers doesn't lose a different provider's saved key.
 
-> **Cost:** You pay Anthropic directly for usage. Each question is a small request (~1,000 output tokens). Haiku is roughly 4–5× cheaper than Sonnet — a 40-question drill on Haiku typically costs a few cents. See current rates at [anthropic.com/pricing](https://www.anthropic.com/pricing).
+**Saving your key:** typing a key doesn't save it right away. When you click **Start Exam**, if the key is new or changed, you'll be asked whether to save it in this browser for next time — click OK to remember it, or Cancel to use it for this session only (it won't be there next time you open the simulator). If a key for the current provider is already saved and matches what's in the field, a small note appears under the field confirming that.
+
+**Which provider should you pick?**
+
+| Provider | Best for | Where to get a key |
+| --- | --- | --- |
+| **Anthropic Claude** | Highest-quality scenarios; the only one without free-tier capacity limits — best for Full-length (175-question) sessions. | [console.anthropic.com](https://console.anthropic.com/settings/keys) |
+| **Google Gemini** | Free, short-to-medium drills (10–40 questions). Its free tier has a **daily request cap**, so a Full session can burn through most of a day's quota — the app warns you if you pick Gemini + Full. | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| **Groq** | Free, fast, open-weight models — generally roomier free-tier limits than Gemini, but still capped; check Groq's current limits before a long session. | [console.groq.com/keys](https://console.groq.com/keys) |
+
+> **Cost (Anthropic):** You pay Anthropic directly for usage. Each question is a small request (~1,000 output tokens). Haiku is roughly 4–5× cheaper than Sonnet — a 40-question drill on Haiku typically costs a few cents. See current rates at [anthropic.com/pricing](https://www.anthropic.com/pricing).
 >
-> **Don't enter your key on a shared or public computer** — it's stored in that browser. Clearing your browser data removes it.
+> **Privacy note (Gemini):** Gemini's free tier may use your inputs/outputs to improve Google's models (opt-in by default) — enabling billing removes free-tier access for that project entirely, so a free Gemini key stays free only as long as you never enable billing on it. If that matters to you, use Anthropic or Groq instead, or check Gemini's terms directly.
+>
+> **Don't enter your key on a shared or public computer.** Declining the save prompt keeps it out of long-term storage, but note: if you **Pause** that exam, the key is temporarily written to your browser as part of the paused-session snapshot (needed so Resume works), and clears automatically once you finish, end, or discard that exam.
 
 ### Starting a session
 
@@ -87,6 +99,14 @@ Click **Next Question** to continue, or **Skip** to move on without answering (a
 
 The **End Exam** button (lower-left of the question screen) stops the session and jumps to your results. Questions you haven't reached are counted as incorrect — exactly as unanswered questions are scored on the real PMP exam.
 
+### Pausing and resuming
+
+Need to stop mid-session? Click **⏸ Pause** (next to End Exam). This saves your exact progress — question number, score so far, and the current question itself — and returns you to the start screen. Nothing is lost, and your spot is preserved even if you close the browser tab or restart your computer before resuming.
+
+Next time you open the simulator, a **"Paused exam in progress"** banner appears at the top of the start screen showing your progress and when you paused. Click **Resume Exam** to pick up exactly where you left off (the same question, no new one generated), or **Discard** to abandon it and start fresh. You can't start a new exam while a paused one exists — resume or discard it first.
+
+One limitation: Pause is only available while a question is unanswered. If you submit an answer and close the browser before clicking Next, that one answer isn't saved — you'll see the same question again on resume.
+
 ## Understanding Your Results
 
 ### Live scoring
@@ -107,24 +127,42 @@ When the exam ends (all questions done, End Exam, or timeout), you'll see:
 
 Click **Review Answers** to see every question, your answer, the correct answer, and the rationale — useful for spotting weak areas before your next session.
 
-## Model Choice: Sonnet vs. Haiku
+### Test history
 
-A quality-versus-cost tradeoff:
+Every completed exam is saved locally so you can track progress over time. From the start screen, click **View Test History** to see a list of past sessions — each showing date, provider/model, overall score, proficiency rating, and a per-domain breakdown. Click **Review Answers** on any entry to see that session's full question-by-question review, same as right after taking it.
 
-| | **Sonnet 4.6** | **Haiku 4.5** |
-| --- | --- | --- |
-| **Question quality** | Higher — more nuanced, realistic | Good — simpler, less nuance |
-| **Speed** | Slightly slower per question | Faster |
-| **Relative cost** | Baseline | ~4–5× cheaper per question |
-| **Best for** | Final exam prep, realistic practice | Quick drills, high volume |
+History is stored in your browser only (nothing is sent anywhere) and keeps your most recent 30 sessions. Use **Clear History** on the Test History screen to wipe it (you'll be asked to confirm — this can't be undone).
 
-If unsure, start with Sonnet for your first few sessions to calibrate against real difficulty, then switch to Haiku for high-volume repetition.
+## Planning Your Study Schedule
+
+Click **Plan My Study Schedule** on the start screen, pick your test date, and the simulator builds a recommended practice schedule between now and then:
+
+- **Frequency tapers to your timeline** — daily short drills if your test is close, spacing out to a few sessions a week if it's further out, picking up again in the final weeks.
+- **One or more full-length (175-question) mock exams** are scheduled with enough runway before your test — never inside the final 2 days, so you're not cramming on the eve of the exam.
+- **The day before your test is always a light, 10-question review** — never a new mock, never a heavy drill.
+
+**Schedule mode:**
+- **Smart** — biases earlier practice sessions toward whichever domain you've scored weakest on in your saved test history. If you don't have any history yet, it falls back to the standard mix and tells you so.
+- **Date-based only** — always uses the standard People 42% / Process 50% / Business 8% mix, regardless of past scores.
+
+Each session in the plan shows its date, focus, length, and domain mix, plus an **"Open this session →"** link that opens the simulator pre-configured with that session's exact settings — no manual reconfiguring needed.
+
+Click **Download Calendar (.ics)** to save the whole schedule as a calendar file you can import into Google Calendar, Outlook, Apple Calendar, or any app that accepts `.ics` files. Each calendar event includes the session's focus and the same pre-configured link, so you can jump straight into that day's practice from your calendar.
+
+Your plan is remembered until you generate a new one (changing the date or mode and clicking **Generate Plan** again replaces it).
+
+## Model Choice
+
+Within whichever provider you've selected, the Model section lets you pick a specific model — the app fetches each provider's current model list live where it can (falling back to a small default list if that fails), so the exact options you see may shift over time as providers update their lineups. As a rule of thumb, larger/"Pro"-class models are higher quality but slower and more rate-limited; smaller/"Flash"/"Lite"/"Instant"-class models are faster, cheaper (or have roomier free-tier limits), and slightly less nuanced.
+
+If unsure, start with the largest model your provider offers for your first few sessions to calibrate against real difficulty, then switch to a smaller one for high-volume repetition.
 
 ## Privacy
 
-- Your API key is stored only in your browser (`localStorage`) and sent only to Anthropic (or to a proxy you explicitly configure).
+- Your API key is sent only to the provider you selected (or to a proxy you explicitly configure) — never anywhere else. Whether it's saved in your browser (`localStorage`, scoped per provider) is your choice, made each time you enter a new or changed key.
 - There is no analytics, no backend, and no database in this app — nothing is sent to the project's author.
-- Clearing your browser data removes your saved key and settings.
+- Clearing your browser data removes your saved keys, settings, any paused exam, your test history, and your study plan.
+- **Gemini specifically:** its free tier may use your inputs/outputs to improve Google's models (opt-in by default), and enabling billing removes free-tier access for that project entirely. See *Connecting to an AI provider* above.
 
 ## Known Limitations
 
@@ -132,7 +170,11 @@ If unsure, start with Sonnet for your first few sessions to calibrate against re
 - Questions are **AI-generated** from the ECO and PMBOK Guide, not drawn from PMI's actual item bank. Treat this as supplemental practice, not a score predictor.
 - An **internet connection** is required, since each question is generated live.
 - **Definition tooltips** are AI-generated at question time and may occasionally differ from official PMBOK wording.
-- **Usage costs money** — you pay Anthropic for API calls (see *Cost* above).
+- **Usage may cost money**, depending on your provider and tier (see the provider table above).
+- **Free-tier rate limits drift** — providers change their free-tier limits and model lineups without notice. If you hit a rate-limit error, wait a bit, switch models, or switch providers.
+- **Pause only works between questions** — if you submit an answer and close the browser before clicking Next, that answer isn't saved.
+- **Test history is capped at the most recent 30 sessions.**
+- **The study plan schedule is a heuristic**, not a personalized study-science recommendation — treat it as a sensible starting structure, not a guarantee.
 
 ## Tips for Best Results
 

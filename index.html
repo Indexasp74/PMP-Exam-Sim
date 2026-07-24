@@ -18,24 +18,45 @@
   <div class="start-title">PMP Practice Exam</div>
   <div class="start-subtitle">AI-generated questions · People · Process · Business Environment</div>
 
-  <!-- CONFIG: API access -->
+  <!-- Paused exam banner -->
+  <div class="config-card hidden" id="pausedBanner" style="border-color:var(--accent);">
+    <div class="cc-title">⏸ Paused exam in progress</div>
+    <div class="cc-hint" id="pausedBannerText"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary" id="resumeBtn">Resume Exam</button>
+      <button class="btn btn-secondary" id="discardPausedBtn">Discard</button>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;margin-bottom:28px;">
+    <button class="btn btn-secondary" id="historyBtn">View Test History</button>
+    <button class="btn btn-secondary" id="planBtn">Plan My Study Schedule</button>
+  </div>
+
+  <!-- CONFIG: AI provider -->
   <div class="config-card">
-    <div class="cc-title">Connect to Claude</div>
+    <div class="cc-title">Connect to an AI provider</div>
     <div class="cc-hint">
-      This app generates questions with Anthropic's Claude API. Use your own API key
-      (<a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">get one here</a>),
-      or point it at a proxy you host. Your key is stored only in this browser (localStorage) and sent
-      directly to Anthropic — never to any other server.
+      Pick which AI generates your questions. Anthropic is paid but highest quality; Gemini and Groq
+      have free tiers (rate-limited — a warning appears below if your session length won't fit). Your
+      key is stored only in this browser (localStorage) and sent directly to the provider — never to
+      any other server — unless you set a proxy URL.
+    </div>
+    <div class="start-options" id="providerOptions" style="margin-bottom:18px;">
+      <button class="opt-btn active" data-val="anthropic">Anthropic — paid, best quality</button>
+      <button class="opt-btn" data-val="gemini">Gemini — free tier, rate-limited</button>
+      <button class="opt-btn" data-val="groq">Groq — free tier, fast, open models</button>
     </div>
     <div class="field">
-      <label for="apiKeyInput">Anthropic API key</label>
+      <label for="apiKeyInput" id="apiKeyLabel">Anthropic API key</label>
       <input type="password" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
-      <div class="field-note">Stored locally in your browser. Leave blank if using a proxy URL below.</div>
+      <div class="field-note saved hidden" id="savedKeyNote"></div>
+      <div class="field-note">Stored locally in your browser. <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" id="providerKeyHelp">Get a key here.</a> Leave blank if using a proxy URL below.</div>
     </div>
     <div class="field">
       <label for="proxyUrlInput">Proxy URL (optional)</label>
       <input type="text" id="proxyUrlInput" placeholder="https://your-proxy.example.com/v1/messages" autocomplete="off" spellcheck="false">
-      <div class="field-note">If set, requests go here instead of directly to Anthropic, and no key is sent from the browser. For self-hosters running a backend that injects the key.</div>
+      <div class="field-note">If set, requests go here instead of directly to the provider, and no key is sent from the browser. The proxy must match the selected provider's request shape and inject that provider's credentials.</div>
     </div>
   </div>
 
@@ -87,9 +108,10 @@
   </div>
 
   <div class="section-label">Model</div>
-  <div class="start-options" id="modelOptions">
-    <button class="opt-btn active" data-val="claude-sonnet-4-6">Sonnet 4.6 — $3/$15 per M · best quality</button>
-    <button class="opt-btn" data-val="claude-haiku-4-5-20251001">Haiku 4.5 — $1/$5 per M · ~4× cheaper</button>
+  <div class="start-options" id="modelOptions"></div>
+
+  <div class="field" style="width:100%;max-width:520px;">
+    <div class="field-note warn hidden" id="rateLimitWarning"></div>
   </div>
 
   <div class="section-label">Approach focus</div>
@@ -151,7 +173,10 @@
       </div>
     </div>
     <div class="btn-row" id="btnRow" style="justify-content: space-between;">
-      <button class="btn btn-danger" id="endBtn">End Exam</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-danger" id="endBtn">End Exam</button>
+        <button class="btn btn-secondary" id="pauseBtn">⏸ Pause</button>
+      </div>
       <div style="display:flex;gap:10px;">
         <button class="btn btn-primary hidden" id="submitBtn">Submit Answer</button>
         <button class="btn btn-secondary hidden" id="nextBtn">Next Question →</button>
@@ -203,6 +228,45 @@
   </div>
 
   <div class="review-section hidden" id="reviewSection"></div>
+</div>
+
+<!-- HISTORY SCREEN -->
+<div class="end-screen" id="historyScreen">
+  <div class="end-title">Test History</div>
+  <div class="btn-row" style="margin-bottom:24px;">
+    <button class="btn btn-secondary" id="historyBackBtn">← Back to Start</button>
+    <button class="btn btn-danger" id="clearHistoryBtn">Clear History</button>
+  </div>
+  <div id="historyList" style="width:100%;"></div>
+</div>
+
+<!-- STUDY PLAN SCREEN -->
+<div class="end-screen" id="planScreen">
+  <div class="end-title">Plan My Study Schedule</div>
+  <div class="btn-row" style="margin-bottom:24px;">
+    <button class="btn btn-secondary" id="planBackBtn">← Back to Start</button>
+  </div>
+
+  <div class="config-card" style="width:100%;max-width:520px;">
+    <div class="cc-title">When's your test?</div>
+    <div class="cc-hint">Pick a date and we'll recommend a practice schedule that tapers toward full-length mock exams, with a light review day before your test.</div>
+    <div class="field">
+      <label for="examDateInput">Test date</label>
+      <input type="date" id="examDateInput">
+    </div>
+    <div class="section-label" style="margin-top:4px;">Schedule mode</div>
+    <div class="start-options" id="planModeOptions" style="margin-bottom:8px;">
+      <button class="opt-btn" data-val="smart">Smart — uses your test history</button>
+      <button class="opt-btn" data-val="date">Date-based only</button>
+    </div>
+    <div class="field-note" id="planModeNote"></div>
+    <div class="error-box hidden" id="planError" style="margin-top:12px;"></div>
+    <button class="btn btn-primary" id="generatePlanBtn" style="margin-top:12px;">Generate Plan</button>
+  </div>
+
+  <div id="planList" style="width:100%;margin-top:24px;"></div>
+
+  <button class="btn btn-secondary hidden" id="downloadIcsBtn" style="margin-top:20px;">Download Calendar (.ics)</button>
 </div>
 
 <script src="app.js"></script>

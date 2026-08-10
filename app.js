@@ -129,8 +129,29 @@ const LS_KEYS = {
   testHistory: 'pmpsim.testHistory',     // JSON array of concluded exams, most recent first
   studyPlan: 'pmpsim.studyPlan',         // JSON { examDate, mode, sessions } — last generated plan
 };
-const DEFAULT_MIX = { people: 42, process: 50, business: 8 };
+const DEFAULT_MIX = { people: 33, process: 41, business: 26 };
 const MAX_HISTORY = 30; // cap so a long run of Full(175) sessions can't blow localStorage's quota
+
+// Task titles per domain, from PMI's PMP Examination Content Outline (July 2026 edition).
+// Grounds question generation in the current ECO rather than the model's stale training data.
+const DOMAIN_TASKS = {
+  people: [
+    'Develop a common vision', 'Manage conflicts', 'Lead the project team', 'Engage stakeholders',
+    'Align stakeholder expectations', 'Manage stakeholder expectations', 'Help ensure knowledge transfer',
+    'Plan and manage communication',
+  ],
+  process: [
+    'Develop an integrated project management plan and plan delivery', 'Develop and manage project scope',
+    'Help ensure value-based delivery', 'Plan and manage resources', 'Plan and manage procurement',
+    'Plan and manage finance', 'Plan and optimize quality of products/deliverables', 'Plan and manage schedule',
+    'Evaluate project status', 'Manage project closure',
+  ],
+  business: [
+    'Define and establish project governance', 'Plan and manage project compliance', 'Manage and control changes',
+    'Remove impediments and manage issues', 'Plan and manage risk', 'Continuous improvement',
+    'Support organizational change', 'Evaluate external business environment changes',
+  ],
+};
 
 // ── State ──────────────────────────────────────────────────────────────────
 let state = {
@@ -863,10 +884,11 @@ async function loadNextQuestion() {
     : `Type: Matching. Provide exactly 4 terms on the left (labeled 1, 2, 3, 4) and 4 definitions on the right (labeled A, B, C, D). Each left item matches exactly one right item.`;
 
   const usedTopics = state.answers.map(a => a.topic).filter(Boolean).join(', ');
+  const domainTasks = DOMAIN_TASKS[domain].join('; ');
 
-  const systemPrompt = `You are a PMP exam question generator. Generate realistic, scenario-based PMP exam questions aligned with the PMI Exam Content Outline (ECO) current edition. Questions must be:
+  const systemPrompt = `You are a PMP exam question generator. Generate realistic, scenario-based PMP exam questions aligned with the PMI Exam Content Outline (ECO), July 2026 edition. Questions must be:
 - Situational (not purely definitional)
-- Aligned to the ${domainLabel} domain
+- Aligned to the ${domainLabel} domain, and to one of these current ECO tasks for that domain: ${domainTasks}
 - At professional difficulty (like the real exam)
 - Avoiding trivial or trick questions
 - Testing judgment and application, not memorization

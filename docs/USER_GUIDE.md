@@ -6,13 +6,28 @@
 
 The PMP Exam Simulator generates realistic, scenario-based practice questions modeled on the PMI Exam Content Outline (ECO). Each question is created fresh by an AI model — your choice of Anthropic Claude, Google Gemini, or Groq — when you take it. There is no fixed question bank, so no two sessions are exactly alike.
 
-By default it covers all three PMP exam domains in the same proportions as the real exam (you can change this — see *Domain mix* below):
+By default it covers all three PMP exam domains in the same proportions as PMI's current Exam Content Outline (ECO), July 2026 edition (you can change this — see *Domain mix* below):
 
-- **People — 42%** (leadership, conflict resolution, team building, stakeholder engagement)
-- **Process — 50%** (risk, schedule, scope, quality, procurement, earned value management)
-- **Business Environment — 8%** (compliance, benefits realization, organizational change)
+- **People — 33%** (vision, conflict management, team leadership, stakeholder engagement, knowledge transfer, communication)
+- **Process — 41%** (integrated planning, scope, value-based delivery, resources, procurement, finance, quality, schedule, project closure)
+- **Business Environment — 26%** (governance, compliance, sustainability, change control, risk, continuous improvement, organizational change)
+
+Question generation is also grounded in the specific task list PMI defines for each domain, not just the domain label, so practice questions track the same job-task structure as the real exam.
 
 It is a study aid, **not** an official PMI product. Questions are AI-generated and are not sourced from PMI's actual exam item bank.
+
+## PMP Certification Eligibility
+
+Taking practice exams here doesn't require any credentials, but sitting the real PMP exam does. PMI requires one of the following before you can apply:
+
+| Education | Required project-leading experience (within the last 10 years) |
+|---|---|
+| Secondary school / high school diploma (or equivalent) | 60 months (5 years) |
+| Associate's degree or equivalent post-secondary award | 48 months (4 years) |
+| Bachelor's degree (or equivalent) | 36 months (3 years) |
+| Bachelor's or postgraduate degree from a PMI GAC-accredited program | 24 months (2 years) |
+
+Experience must be non-overlapping and accrued in the 10 years prior to your application; PMI may audit applications and request documentation of both the education level and the experience. See PMI's official PMP Handbook for the full, current eligibility rules before applying.
 
 ## Getting Started
 
@@ -58,7 +73,7 @@ Settings are remembered per provider between visits, so switching providers does
 
 On the start screen, set up your session:
 
-- **Domain mix** — how questions are split across People / Process / Business Environment. Defaults match the real exam (42 / 50 / 8); adjust the numbers to drill a weak domain. Values are normalized, so they don't have to add up to exactly 100.
+- **Domain mix** — how questions are split across People / Process / Business Environment. Defaults match the current PMI ECO (33 / 41 / 26); adjust the numbers to drill a weak domain. Values are normalized, so they don't have to add up to exactly 100.
 - **Session length** — 10, 20, or 40 questions for a quick drill, or **Full (175)** to mirror real exam length and timing.
 - **Model** — Sonnet (higher quality, more nuanced scenarios) or Haiku (faster, cheaper). See *Model Choice* below.
 - **Approach focus** — Mixed (a realistic blend of predictive, agile, and hybrid), or a single approach to drill one area.
@@ -143,7 +158,7 @@ Click **Plan My Study Schedule** on the start screen, pick your test date, and t
 
 **Schedule mode:**
 - **Smart** — biases earlier practice sessions toward whichever domain you've scored weakest on in your saved test history. If you don't have any history yet, it falls back to the standard mix and tells you so.
-- **Date-based only** — always uses the standard People 42% / Process 50% / Business 8% mix, regardless of past scores.
+- **Date-based only** — always uses the standard People 33% / Process 41% / Business 26% mix, regardless of past scores.
 
 Each session in the plan shows its date, focus, length, and domain mix, plus an **"Open this session →"** link that opens the simulator pre-configured with that session's exact settings — no manual reconfiguring needed.
 

@@ -1,6 +1,6 @@
 # PMP Exam Simulator — Developer's Guide
 
-**v1.7**
+**v1.8**
 
 ## Overview
 
@@ -47,7 +47,7 @@ let state = {
   model: 'claude-sonnet-4-6',  // active provider's model string (mirrors providerConfig[provider].model)
   apiKey: '',                  // active provider's key (mirrors providerConfig[provider].apiKey)
   proxyUrl: '',                // optional proxy endpoint, persisted, provider-agnostic
-  domainWeights: { people: 42, process: 50, business: 8 }, // configurable, persisted
+  domainWeights: { people: 33, process: 41, business: 26 }, // configurable, persisted
   qIndex: 0,                   // 0-based index of current question
   questions: [],               // currently unused (legacy field)
   answers: [],                 // array of answer-record objects, see below
@@ -198,10 +198,12 @@ Each call to `loadNextQuestion()` builds a fresh system prompt (embedding the ta
 
 Selection happens client-side, before the API call, via weighted random rolls:
 
-- `pickDomain()` — weighted random against `state.domainWeights`, **normalized by the live total** (so weights need not sum to 100). Falls back to `process` if the total is ≤ 0.
+- `pickDomain()` — weighted random against `state.domainWeights`, **normalized by the live total** (so weights need not sum to 100). Falls back to `process` if the total is ≤ 0. `DEFAULT_MIX` is `{ people: 33, process: 41, business: 26 }`, matching PMI's July 2026 ECO.
 - Question type — inline roll in `loadNextQuestion()`: 60% `multiple_choice`, 25% `multiple_response`, 15% `matching`.
 
 Domain and type are determined by the client's RNG, not the model. The system prompt tells the model which to generate; the model does not choose.
+
+As of v1.8, the system prompt also grounds each question in one of that domain's actual ECO tasks, not just the domain label — `DOMAIN_TASKS` (top of `app.js`) holds PMI's current task titles per domain (People: 8 tasks, Process: 10, Business Environment: 8), and `loadNextQuestion()` joins the selected domain's list into the prompt. This exists because third-party prep courses' self-paced content can lag PMI's ECO revisions by months; embedding the task titles directly keeps generation aligned with the current outline regardless of what the model's training data reflects.
 
 ### Response schema
 
@@ -270,8 +272,8 @@ Session day-offsets come from two heuristic generators (banded, not an exact sci
 The two offset sets are merged with the exam-eve review day, deduped, and sorted. Session length (10/20/40) steps up across the resulting practice offsets in thirds; mocks are always 175 and the final day is always 10 ("light review").
 
 Domain mix per non-mock session comes from `sessionDomainMix(mode, weak)`:
-- `mode === 'date'` (or Smart with no history): always `DEFAULT_MIX` (42/50/8).
-- `mode === 'smart'`: `findWeakestDomain()` aggregates `domainCorrect`/`domainCounts` across every `loadHistory()` entry to find the lowest-accuracy domain (domains with zero recorded attempts are skipped, not treated as 0% weak); that domain gets boosted to 65%, the other two split the remaining 35% proportional to their normal 42/50/8 ratio. Mock sessions always use the standard mix in both modes — a mock should simulate the real test, never a skewed one.
+- `mode === 'date'` (or Smart with no history): always `DEFAULT_MIX` (33/41/26).
+- `mode === 'smart'`: `findWeakestDomain()` aggregates `domainCorrect`/`domainCounts` across every `loadHistory()` entry to find the lowest-accuracy domain (domains with zero recorded attempts are skipped, not treated as 0% weak); that domain gets boosted to 65%, the other two split the remaining 35% proportional to their normal 33/41/26 ratio. Mock sessions always use the standard mix in both modes — a mock should simulate the real test, never a skewed one.
 
 ### Deep-linking via URL query params
 
@@ -288,7 +290,7 @@ On load, `applyDeepLinkParams()` (called from the init block, after `loadConfig(
 `state.answers` is padded to `state.sessionLen` before scoring in `endExam()`:
 
 1. **Unsubmitted current question** — if `state.currentQ` is set but `state.answered` is false, it is pushed as incorrect with its real (already-generated) domain.
-2. **Unreached questions** — any gap between `state.answers.length` and `state.sessionLen` is filled with incorrect records, distributed across domains **by the configured `state.domainWeights`** (not the hardcoded 42/50/8). Each domain gets `Math.floor(remaining * weight / total)`; the rounding remainder goes to the **highest-weight domain** (computed dynamically, no longer hardcoded to `process`).
+2. **Unreached questions** — any gap between `state.answers.length` and `state.sessionLen` is filled with incorrect records, distributed across domains **by the configured `state.domainWeights`** (not a hardcoded ratio). Each domain gets `Math.floor(remaining * weight / total)`; the rounding remainder goes to the **highest-weight domain** (computed dynamically, no longer hardcoded to `process`).
 
 All denominators (live score label, per-domain cards, end-screen totals) use `state.sessionLen`, so a session ended early shows a truthful percentage. Unreached-question domain attribution is an estimate, not ground truth — the real domain was never rolled.
 
@@ -343,6 +345,12 @@ The 120 s/question figure deliberately overallocates vs. the real exam's ~79 s/q
 - **Deep-link query params are unauthenticated and unsigned** — anyone with a generated link can open the sim pre-configured with that session's settings. This is by design (no accounts, no backend to verify against) and carries no real risk since the params only set practice preferences, never credentials.
 
 ## Changelog
+
+### v1.8
+- Updated `DEFAULT_MIX` to `{ people: 33, process: 41, business: 26 }`, matching PMI's PMP Examination Content Outline (ECO), July 2026 edition (previously 42/50/8, an older ECO's ratios). Affects the start-screen defaults, Date-based study-plan mode, and Smart mode's 65/35 boost split.
+- Added `DOMAIN_TASKS`, PMI's current per-domain task titles, and wired them into `loadNextQuestion()`'s system prompt so generated questions are grounded in the actual current ECO task list per domain, not just the domain label. See *Domain and question-type selection*.
+- Updated start-screen domain-card blurbs (`index.html`) to reflect the current ECO's task emphasis (e.g., sustainability and broadened compliance scope now called out under Business Environment).
+- Added a PMP certification eligibility summary to the User Guide (informational only — this app has no eligibility-checking feature).
 
 ### v1.7
 - Fixed: a verbose AI-generated matching-question definition could stretch the closed `<select>` box wider than its table column (browsers auto-size selects to their widest option), pushing the whole page into horizontal overflow. `renderMatching()` now truncates `<option>` labels to 70 chars with an ellipsis — lossless, since the untruncated text still appears in the Definitions list below the table — and `.match-table select` gets a `max-width: 100%` backstop.

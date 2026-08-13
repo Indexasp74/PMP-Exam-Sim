@@ -1,6 +1,6 @@
 # PMP Exam Simulator — Developer's Guide
 
-**v1.8**
+**v1.9**
 
 ## Overview
 
@@ -326,6 +326,23 @@ const fullTime = state.sessionLen === 175
 
 The 120 s/question figure deliberately overallocates vs. the real exam's ~79 s/question to absorb API latency. On expiry (`secondsLeft <= 0`), `endExam()` runs — same path as the manual End Exam button.
 
+## Deployment
+
+The GitHub repo is the source of truth; a live BYOK demo is also hosted at **[minotaurdesign.com/pmp-exam-simulator](https://minotaurdesign.com/pmp-exam-simulator/)**, deployed to Richard's Hostinger Premium account. Since the app has no build step, "deploying" is just copying the static files to the server — there's no compiled `dist/`.
+
+**Target:** `~/domains/minotaurdesign.com/public_html/pmp-exam-simulator/` on `minotaurdesign.com`, via SSH (port 65002). Note there's an unrelated `~/domains/minotaurdesign.com/public_html/pmp/` directory on the same server (Richard's personal PMP prep tracker) — don't confuse the two or deploy into it.
+
+**Redeploy after any change to `index.html`, `styles.css`, or `app.js`:**
+
+```bash
+scp -P 65002 index.html styles.css app.js README.md LICENSE \
+  u122937684@minotaurdesign.com:~/domains/minotaurdesign.com/public_html/pmp-exam-simulator/
+```
+
+Requires an SSH key already trusted by that account (no interactive prompt if so). `docs/` isn't uploaded — the live demo doesn't link to the guides, and it's fine for the deployed copy to be doc-light. If a change updates `README.md`'s live-demo copy itself, re-run the same command; it's included above.
+
+No server-side config, env vars, or secrets are involved — the app is BYOK, so every visitor supplies their own API key client-side.
+
 ## Known issues and limitations
 
 - **No schema validation** on API responses — a structurally-valid but incomplete object can break rendering without a caught error.
@@ -345,6 +362,9 @@ The 120 s/question figure deliberately overallocates vs. the real exam's ~79 s/q
 - **Deep-link query params are unauthenticated and unsigned** — anyone with a generated link can open the sim pre-configured with that session's settings. This is by design (no accounts, no backend to verify against) and carries no real risk since the params only set practice preferences, never credentials.
 
 ## Changelog
+
+### v1.9
+- Deployed a live BYOK demo to `minotaurdesign.com/pmp-exam-simulator`, hosted on Richard's Hostinger account. Documented the redeploy command in *Deployment* above. README now links to it.
 
 ### v1.8
 - Updated `DEFAULT_MIX` to `{ people: 33, process: 41, business: 26 }`, matching PMI's PMP Examination Content Outline (ECO), July 2026 edition (previously 42/50/8, an older ECO's ratios). Affects the start-screen defaults, Date-based study-plan mode, and Smart mode's 65/35 boost split.

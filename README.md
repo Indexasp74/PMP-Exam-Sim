@@ -1,8 +1,10 @@
 # PMP Exam Simulator
 
-A free, open-source practice exam for the **Project Management Professional (PMP)®** certification. Questions are generated on the fly by an AI model of your choice — situational, scenario-based, and aligned to the current PMI Exam Content Outline across the three domains: **People (42%)**, **Process (50%)**, and **Business Environment (8%)**.
+**[Live demo →](https://minotaurdesign.com/pmp-exam-simulator/)** — no install, bring your own API key.
 
-No accounts, no servers, no tracking. It's a static web app: you bring your own API key for whichever provider you pick, and questions are generated directly in your browser.
+A free, open-source practice exam for the **Project Management Professional (PMP)®** certification. Questions are generated on the fly by an AI model of your choice — situational, scenario-based, and aligned to the current PMI Exam Content Outline (July 2026 edition) across the three domains: **People (33%)**, **Process (41%)**, and **Business Environment (26%)**.
+
+No accounts, no servers, no tracking. It's a static web app: you bring your own API key for whichever provider you pick, and questions are generated directly in your browser. The live demo above runs the exact code in this repo — clone it if you'd rather run it locally or host your own copy.
 
 ## Features
 
@@ -54,7 +56,7 @@ All settings live on the start screen and persist in your browser between sessio
 | **AI provider** | Anthropic, Gemini, or Groq. |
 | **API key** | Your key for the selected provider. Required unless you use a proxy. You'll be asked whether to save it locally when you start an exam with a new or changed key. |
 | **Proxy URL** | Optional. If set, requests go here instead of directly to the provider, and no key is sent from the browser (see below). |
-| **Domain mix** | Adjust how questions are distributed across People / Process / Business Environment. Values are normalized, so they needn't sum to 100. |
+| **Domain mix** | Adjust how questions are distributed across People (33%) / Process (41%) / Business Environment (26%). Values are normalized, so they needn't sum to 100. |
 | **Session length** | 10, 20, 40, or full (175) questions. |
 | **Model** | Varies by provider. |
 | **Approach focus** | Predictive, Agile/Scrum, Hybrid, or Mixed. |

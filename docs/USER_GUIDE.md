@@ -140,11 +140,15 @@ When the exam ends (all questions done, End Exam, or timeout), you'll see:
 - A **proficiency rating**: Above Target, Meeting Target, Below Target, or Needs Improvement
 - A **per-domain breakdown**
 
+A **radar chart** visualizes your accuracy across all three domains at a glance — balanced coverage shows a full triangle, while a lopsided shape reveals which domains need more work. Next to it, an **answer map** shows every question as a colored bar: green for correct, red for incorrect, gray for skipped or not reached, with domain-colored borders so you can see where clusters of misses occurred.
+
 Click **Review Answers** to see every question, your answer, the correct answer, and the rationale — useful for spotting weak areas before your next session.
 
 ### Test history
 
 Every completed exam is saved locally so you can track progress over time. From the start screen, click **View Test History** to see a list of past sessions — each showing date, provider/model, overall score, proficiency rating, and a per-domain breakdown. Click **Review Answers** on any entry to see that session's full question-by-question review, same as right after taking it.
+
+Once you have two or more sessions, a **performance trend chart** appears at the top of the history screen — overall score as a solid line, per-domain scores as dashed lines, so you can see improvement (or plateaus) over time.
 
 History is stored in your browser only (nothing is sent anywhere) and keeps your most recent 30 sessions. Use **Clear History** on the Test History screen to wipe it (you'll be asked to confirm — this can't be undone).
 

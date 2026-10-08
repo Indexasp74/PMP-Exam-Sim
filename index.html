@@ -28,9 +28,36 @@
     </div>
   </div>
 
-  <div style="display:flex;gap:10px;margin-bottom:28px;">
-    <button class="btn btn-secondary" id="historyBtn">View Test History</button>
-    <button class="btn btn-secondary" id="planBtn">Plan My Study Schedule</button>
+  <!-- Visualizations -->
+  <div class="config-card viz-section" id="vizSection">
+    <div class="cc-title">Visualizations</div>
+    <div class="cc-hint">Track your performance across sessions. Charts populate as you complete practice exams.</div>
+
+    <div class="viz-grid">
+      <div class="viz-card">
+        <div class="viz-card-label">End Screen</div>
+        <div class="viz-card-title">Domain Radar</div>
+        <div class="viz-preview"><canvas id="previewRadar"></canvas></div>
+        <div class="viz-card-desc">Spider chart of per-domain accuracy. Balanced performance fills the triangle; a lopsided shape shows where to focus.</div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-card-label">End Screen</div>
+        <div class="viz-card-title">Answer Map</div>
+        <div class="viz-preview"><canvas id="previewStrip"></canvas></div>
+        <div class="viz-card-desc">Each question as a colored bar — green for correct, red for incorrect, gray for skipped — with domain-colored borders. Spot clusters of misses at a glance.</div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-card-label">History Screen</div>
+        <div class="viz-card-title">Performance Trend</div>
+        <div class="viz-preview"><canvas id="previewTrend"></canvas></div>
+        <div class="viz-card-desc">Overall score (solid line) and per-domain scores (dashed) across sessions. Appears after two or more completed exams.</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:18px;">
+      <button class="btn btn-primary" id="historyBtn">View Test History</button>
+      <button class="btn btn-secondary" id="planBtn">Plan My Study Schedule</button>
+    </div>
   </div>
 
   <!-- CONFIG: AI provider -->
@@ -222,6 +249,17 @@
     </div>
   </div>
 
+  <div class="chart-row" id="endCharts">
+    <div class="chart-card">
+      <div class="chart-title">Domain Breakdown</div>
+      <canvas id="radarChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Answer Map</div>
+      <canvas id="stripChart"></canvas>
+    </div>
+  </div>
+
   <div class="btn-row" style="margin-bottom:28px">
     <button class="btn btn-primary" id="restartBtn">New Exam</button>
     <button class="btn btn-secondary" id="reviewBtn">Review Answers ↓</button>
@@ -236,6 +274,10 @@
   <div class="btn-row" style="margin-bottom:24px;">
     <button class="btn btn-secondary" id="historyBackBtn">← Back to Start</button>
     <button class="btn btn-danger" id="clearHistoryBtn">Clear History</button>
+  </div>
+  <div class="chart-card" id="historyChartCard" style="width:100%;margin-bottom:24px;">
+    <div class="chart-title">Performance Over Time</div>
+    <canvas id="trendChart"></canvas>
   </div>
   <div id="historyList" style="width:100%;"></div>
 </div>
@@ -269,6 +311,7 @@
   <button class="btn btn-secondary hidden" id="downloadIcsBtn" style="margin-top:20px;">Download Calendar (.ics)</button>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

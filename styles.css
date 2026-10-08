@@ -508,6 +508,86 @@ header {
   max-width: 860px;
 }
 
+/* Viz preview section (start screen) */
+.viz-section { margin-bottom: 28px; }
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.viz-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+}
+.viz-card-label {
+  font-size: 9px;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.viz-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.viz-preview {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 10px;
+  position: relative;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.viz-preview canvas { width: 100% !important; max-height: 140px; }
+.viz-placeholder {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--text-muted);
+  text-align: center;
+  padding: 20px 8px;
+  line-height: 1.6;
+}
+.viz-card-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.55;
+  flex: 1;
+}
+
+/* Charts */
+.chart-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  width: 100%;
+  margin-bottom: 24px;
+}
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 22px;
+}
+.chart-card canvas { width: 100% !important; }
+.chart-title {
+  font-size: 11px;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
 /* Misc */
 .multi-hint { font-size: 11px; color: var(--yellow); font-family: var(--mono); margin-bottom: 10px; }
 .hidden { display: none !important; }
@@ -516,4 +596,6 @@ header {
   .score-row { grid-template-columns: 1fr 1fr; }
   .question-card { padding: 20px 18px; }
   .mix-row { grid-template-columns: 1fr; }
+  .chart-row { grid-template-columns: 1fr; }
+  .viz-grid { grid-template-columns: 1fr; }
 }

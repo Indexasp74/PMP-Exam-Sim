@@ -1,6 +1,6 @@
 # PMP Exam Simulator — Developer's Guide
 
-**v1.9**
+**v2.0**
 
 ## Overview
 
@@ -343,6 +343,26 @@ Requires an SSH key already trusted by that account (no interactive prompt if so
 
 No server-side config, env vars, or secrets are involved — the app is BYOK, so every visitor supplies their own API key client-side.
 
+## Data visualization (Chart.js)
+
+Three interactive charts render session and historical performance data using Chart.js 4.4.4 (loaded from cdnjs). Chart colors are derived at startup from the existing CSS custom properties (`--people`, `--accent2`, `--biz`, `--green`, `--red`, etc.) so they stay consistent with the rest of the UI. All chart instances are tracked in `activeCharts` and destroyed on screen transitions to avoid canvas-reuse errors.
+
+### End-screen charts
+
+**Domain radar** (`renderRadarChart()`) — a radar/spider chart showing the current session's per-domain accuracy as a percentage (0–100), with domain-colored point markers and axis labels. Gives an immediate visual of balance vs. gaps.
+
+**Answer map** (`renderStripChart()`) — a bar chart where each question is one bar, colored green (correct), red (incorrect), or gray (skipped/not reached/not submitted), with a domain-colored border. Tooltips show result and domain. Useful for spotting clusters of misses or domain-specific weak spots within a session.
+
+### History-screen chart
+
+**Performance trend** (`renderTrendChart()`) — a line chart showing overall score (solid, filled) and per-domain scores (dashed) across all sessions in chronological order. Only renders when there are at least two history entries; hidden otherwise. Uses `spanGaps: true` so domains with no attempts in a given session don't break the line.
+
+### Guard rails
+
+- Chart.js is loaded via `<script>` from cdnjs with a pinned version. If the CDN is unavailable, the app works normally — charts silently don't render (all render functions check `typeof Chart`).
+- `destroyChart(key)` is called before every render and on every screen-exit handler that owns a chart canvas, so no chart instance leaks.
+- Chart canvases are plain `<canvas>` elements in `index.html`, not dynamically created, so they survive screen toggles without re-creation.
+
 ## Known issues and limitations
 
 - **No schema validation** on API responses — a structurally-valid but incomplete object can break rendering without a caught error.
@@ -362,6 +382,11 @@ No server-side config, env vars, or secrets are involved — the app is BYOK, so
 - **Deep-link query params are unauthenticated and unsigned** — anyone with a generated link can open the sim pre-configured with that session's settings. This is by design (no accounts, no backend to verify against) and carries no real risk since the params only set practice preferences, never credentials.
 
 ## Changelog
+
+### v2.0
+- Added **data visualization** via Chart.js 4.4.4: a domain radar chart and answer-map strip chart on the end screen, and a performance-over-time trend chart on the history screen. See *Data visualization (Chart.js)*.
+- Chart colors derived from existing CSS custom properties for visual consistency.
+- All chart instances tracked and destroyed on screen transitions.
 
 ### v1.9
 - Deployed a live BYOK demo to `minotaurdesign.com/pmp-exam-simulator`, hosted on Richard's Hostinger account. Documented the redeploy command in *Deployment* above. README now links to it.

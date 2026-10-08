@@ -20,8 +20,8 @@ A static, shareable PMP exam simulator meant to be cloned and run from GitHub. I
 **Screen state machine** — five mutually exclusive views, never separate pages:
 - `#startScreen` — config: two `config-card`s (AI provider connection, domain mix), provider/model/length/approach option buttons, the paused-session banner, and the View Test History / Plan My Study Schedule entry points. Toggled via `.hidden`.
 - `#examScreen` — holds `#loadingWrap`, `#questionWrap`, and `#errorWrap` (also toggled among themselves). Toggled via `.hidden`.
-- `#endScreen` — score summary + on-demand answer review. Toggled via `.show` (reuses the `.end-screen` card pattern).
-- `#historyScreen` — list of past sessions, each with an expandable answer review; reached from and returns to `#startScreen`. Toggled via `.show`, same pattern as `#endScreen`.
+- `#endScreen` — score summary, domain radar chart, answer-map strip chart, and on-demand answer review. Toggled via `.show` (reuses the `.end-screen` card pattern).
+- `#historyScreen` — performance-over-time trend chart (when ≥2 sessions exist) plus list of past sessions, each with an expandable answer review; reached from and returns to `#startScreen`. Toggled via `.show`, same pattern as `#endScreen`.
 - `#planScreen` — test-date input, Smart/Date-based mode toggle, generated practice schedule, `.ics` calendar download; reached from and returns to `#startScreen`. Toggled via `.show`, same pattern as `#endScreen`.
 
 **Central `state` object** (top of `app.js`) is the single source of truth: `provider`, `providerConfig` (per-provider saved key/model), `domainWeights`, current question index, generated `questions`, recorded `answers`, per-domain tallies, timer handle, and `history` (the running API conversation, in a neutral role shape). `startExam()` resets the per-session fields; `selectProvider()` swaps `state.apiKey`/`state.model` to mirror whichever provider is active.

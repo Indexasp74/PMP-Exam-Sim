@@ -667,6 +667,7 @@ $('historyBtn').addEventListener('click', () => {
   $('historyScreen').classList.add('show');
 });
 $('historyBackBtn').addEventListener('click', () => {
+  destroyChart('trend');
   $('historyScreen').classList.remove('show');
   $('startScreen').classList.remove('hidden');
 });
@@ -1301,9 +1302,14 @@ function showEndScreen() {
     $(`end-${id}`).textContent = t > 0 ? p + '%' : '—';
     $(`end-${id}-sub`).textContent = t > 0 ? `${c} of ${t} correct` : 'not tested';
   });
+
+  renderRadarChart();
+  renderStripChart();
 }
 
 $('restartBtn').addEventListener('click', () => {
+  destroyChart('radar');
+  destroyChart('strip');
   $('endScreen').classList.remove('show');
   $('reviewSection').classList.add('hidden');
   $('reviewSection').innerHTML = '';
@@ -1361,6 +1367,8 @@ function renderHistoryScreen() {
   const container = $('historyList');
   container.innerHTML = '';
 
+  renderTrendChart();
+
   if (list.length === 0) {
     container.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:40px 0;">No completed exams yet.</div>';
     return;
@@ -1376,6 +1384,7 @@ function renderHistoryScreen() {
         <div>
           <span style="font-family:var(--mono);font-size:12px;color:var(--text-muted)">${escHtml(date)}</span>
           <span style="font-size:12px;color:var(--text-muted);margin-left:10px;">${escHtml(providerLabel)} · ${escHtml(entry.model)} · ${entry.sessionLen}Q</span>
+          ${entry.sample ? '<span style="font-size:9px;font-family:var(--mono);background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:2px 6px;margin-left:8px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Sample Data</span>' : ''}
         </div>
         <span class="end-rating ${ratingClassFor(entry.rating)}" style="margin:0;">${escHtml(entry.rating)}</span>
       </div>
@@ -1624,7 +1633,461 @@ function applyDeepLinkParams() {
   history.replaceState(null, '', location.pathname);
 }
 
+// ── Charts ──────────────────────────────────────────────────────────────────
+const CHART_COLORS = {
+  people: getComputedStyle(document.documentElement).getPropertyValue('--people').trim(),
+  process: getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim(),
+  business: getComputedStyle(document.documentElement).getPropertyValue('--biz').trim(),
+  green: getComputedStyle(document.documentElement).getPropertyValue('--green').trim(),
+  red: getComputedStyle(document.documentElement).getPropertyValue('--red').trim(),
+  accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
+  muted: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim(),
+  text: getComputedStyle(document.documentElement).getPropertyValue('--text').trim(),
+  border: getComputedStyle(document.documentElement).getPropertyValue('--border').trim(),
+};
+
+const chartDefaults = {
+  font: { family: "'Segoe UI', system-ui, sans-serif", size: 11 },
+  color: CHART_COLORS.muted,
+};
+if (typeof Chart !== 'undefined') {
+  Chart.defaults.font.family = chartDefaults.font.family;
+  Chart.defaults.font.size = chartDefaults.font.size;
+  Chart.defaults.color = chartDefaults.color;
+}
+
+let activeCharts = {};
+
+function destroyChart(key) {
+  if (activeCharts[key]) { activeCharts[key].destroy(); delete activeCharts[key]; }
+}
+
+function renderRadarChart() {
+  destroyChart('radar');
+  const canvas = $('radarChart');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  const domains = ['people', 'process', 'business'];
+  const scores = domains.map(d => {
+    const t = state.domainCounts[d];
+    return t > 0 ? Math.round((state.domainCorrect[d] / t) * 100) : 0;
+  });
+
+  activeCharts.radar = new Chart(canvas, {
+    type: 'radar',
+    data: {
+      labels: ['People', 'Process', 'Business Env'],
+      datasets: [{
+        label: 'Your Score %',
+        data: scores,
+        backgroundColor: `${CHART_COLORS.accent}20`,
+        borderColor: CHART_COLORS.accent,
+        borderWidth: 2,
+        pointBackgroundColor: domains.map(d => CHART_COLORS[d]),
+        pointBorderColor: domains.map(d => CHART_COLORS[d]),
+        pointRadius: 5,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { stepSize: 25, backdropColor: 'transparent', font: { size: 10 } },
+          grid: { color: `${CHART_COLORS.border}80` },
+          angleLines: { color: `${CHART_COLORS.border}80` },
+          pointLabels: {
+            font: { size: 12, weight: '600' },
+            color: domains.map(d => CHART_COLORS[d]),
+          },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.parsed.r}%`,
+          },
+        },
+      },
+    },
+  });
+}
+
+function renderStripChart() {
+  destroyChart('strip');
+  const canvas = $('stripChart');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  const answers = state.answers;
+  if (answers.length === 0) return;
+
+  const labels = answers.map((_, i) => `Q${i + 1}`);
+  const barColors = answers.map(a => {
+    if (a.notReached || a.notSubmitted || a.skipped) return `${CHART_COLORS.muted}60`;
+    return a.correct ? CHART_COLORS.green : CHART_COLORS.red;
+  });
+  const borderColors = answers.map(a => {
+    const domainKey = a.domain || 'people';
+    return CHART_COLORS[domainKey] || CHART_COLORS.muted;
+  });
+
+  activeCharts.strip = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: answers.map(() => 1),
+        backgroundColor: barColors,
+        borderColor: borderColors,
+        borderWidth: 2,
+        borderRadius: 2,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'x',
+      scales: {
+        y: { display: false },
+        x: {
+          ticks: {
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 20,
+            font: { family: "'Courier New', monospace", size: 9 },
+          },
+          grid: { display: false },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: ctx => ctx[0].label,
+            label: ctx => {
+              const a = answers[ctx.dataIndex];
+              if (a.notReached) return 'Not reached';
+              if (a.notSubmitted) return 'Not submitted';
+              if (a.skipped) return 'Skipped';
+              const domain = (a.domain || '').charAt(0).toUpperCase() + (a.domain || '').slice(1);
+              return `${a.correct ? 'Correct' : 'Incorrect'} · ${domain}`;
+            },
+          },
+        },
+      },
+    },
+  });
+  canvas.parentElement.style.height = '180px';
+  canvas.style.height = '180px';
+}
+
+function renderTrendChart() {
+  destroyChart('trend');
+  const canvas = $('trendChart');
+  const card = $('historyChartCard');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  const list = loadHistory().slice().reverse();
+  if (list.length < 2) {
+    if (card) card.style.display = 'none';
+    return;
+  }
+  if (card) card.style.display = '';
+
+  const labels = list.map(e => {
+    const d = new Date(e.endedAt);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  });
+
+  const overall = list.map(e => e.pct);
+  const peoplePct = list.map(e => {
+    const t = e.domainCounts?.people || 0;
+    return t > 0 ? Math.round(((e.domainCorrect?.people || 0) / t) * 100) : null;
+  });
+  const processPct = list.map(e => {
+    const t = e.domainCounts?.process || 0;
+    return t > 0 ? Math.round(((e.domainCorrect?.process || 0) / t) * 100) : null;
+  });
+  const bizPct = list.map(e => {
+    const t = e.domainCounts?.business || 0;
+    return t > 0 ? Math.round(((e.domainCorrect?.business || 0) / t) * 100) : null;
+  });
+
+  activeCharts.trend = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Overall',
+          data: overall,
+          borderColor: CHART_COLORS.text,
+          backgroundColor: `${CHART_COLORS.text}18`,
+          borderWidth: 2.5,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        },
+        {
+          label: 'People',
+          data: peoplePct,
+          borderColor: CHART_COLORS.people,
+          borderWidth: 1.5,
+          borderDash: [4, 3],
+          tension: 0.3,
+          pointRadius: 3,
+          spanGaps: true,
+        },
+        {
+          label: 'Process',
+          data: processPct,
+          borderColor: CHART_COLORS.process,
+          borderWidth: 1.5,
+          borderDash: [4, 3],
+          tension: 0.3,
+          pointRadius: 3,
+          spanGaps: true,
+        },
+        {
+          label: 'Business Env',
+          data: bizPct,
+          borderColor: CHART_COLORS.business,
+          borderWidth: 1.5,
+          borderDash: [4, 3],
+          tension: 0.3,
+          pointRadius: 3,
+          spanGaps: true,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        y: {
+          min: 0, max: 100,
+          ticks: { callback: v => v + '%', stepSize: 25 },
+          grid: { color: `${CHART_COLORS.border}40` },
+        },
+        x: {
+          grid: { display: false },
+        },
+      },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { usePointStyle: true, pointStyle: 'line', boxWidth: 30, padding: 16 },
+        },
+        tooltip: {
+          callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}%` },
+        },
+      },
+    },
+  });
+  canvas.parentElement.style.height = '320px';
+  canvas.style.height = '320px';
+}
+
+// ── Sample data ─────────────────────────────────────────────────────────────
+// Seeds three sample exam sessions into test history so the visualization
+// charts have data to display out of the box. Only runs when history is empty;
+// once a user completes a real exam (or clears history), these are gone.
+function seedDemoHistory() {
+  if (loadHistory().length > 0) return;
+  const entries = [
+    {
+      id: Date.now() - 200000, sample: true,
+      endedAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+      provider: 'anthropic', model: 'claude-sonnet-4-6', sessionLen: 20, approach: 'mixed',
+      domainWeights: { people: 33, process: 41, business: 26 },
+      pct: 55, totalCorrect: 11, rating: 'Below Target',
+      domainCounts: { people: 7, process: 8, business: 5 },
+      domainCorrect: { people: 4, process: 5, business: 2 },
+      answers: Array.from({ length: 20 }, (_, i) => ({
+        correct: i < 11, domain: i < 7 ? 'people' : i < 15 ? 'process' : 'business',
+        topic: 'Demo question', userAnswer: 'A', correctAnswer: 'A',
+        rationale: 'Demo rationale', qText: `Demo question ${i + 1}`, qType: 'multiple_choice',
+      })),
+    },
+    {
+      id: Date.now() - 100000, sample: true,
+      endedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+      provider: 'anthropic', model: 'claude-sonnet-4-6', sessionLen: 20, approach: 'mixed',
+      domainWeights: { people: 33, process: 41, business: 26 },
+      pct: 65, totalCorrect: 13, rating: 'Meeting Target',
+      domainCounts: { people: 7, process: 8, business: 5 },
+      domainCorrect: { people: 5, process: 6, business: 2 },
+      answers: Array.from({ length: 20 }, (_, i) => ({
+        correct: i < 13, domain: i < 7 ? 'people' : i < 15 ? 'process' : 'business',
+        topic: 'Demo question', userAnswer: 'B', correctAnswer: 'B',
+        rationale: 'Demo rationale', qText: `Demo question ${i + 1}`, qType: 'multiple_choice',
+      })),
+    },
+    {
+      id: Date.now(), sample: true,
+      endedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
+      provider: 'anthropic', model: 'claude-sonnet-4-6', sessionLen: 20, approach: 'mixed',
+      domainWeights: { people: 33, process: 41, business: 26 },
+      pct: 75, totalCorrect: 15, rating: 'Above Target',
+      domainCounts: { people: 7, process: 8, business: 5 },
+      domainCorrect: { people: 6, process: 6, business: 3 },
+      answers: Array.from({ length: 20 }, (_, i) => ({
+        correct: i < 15, domain: i < 7 ? 'people' : i < 15 ? 'process' : 'business',
+        topic: 'Demo question', userAnswer: 'C', correctAnswer: 'C',
+        rationale: 'Demo rationale', qText: `Demo question ${i + 1}`, qType: 'multiple_choice',
+      })),
+    },
+  ];
+  entries.forEach(e => recordHistoryEntry(e));
+}
+seedDemoHistory();
+
+// ── Preview charts (start screen) ────────────────────────────────────────────
+function renderPreviewCharts() {
+  if (typeof Chart === 'undefined') return;
+  const history = loadHistory();
+
+  // Sample data when no history exists
+  const sampleScores = [55, 65, 75];
+  const sampleDomain = {
+    people:   { counts: [7, 7, 7], correct: [4, 5, 6] },
+    process:  { counts: [8, 8, 8], correct: [5, 6, 6] },
+    business: { counts: [5, 5, 5], correct: [2, 2, 3] },
+  };
+
+  const hasData = history.length > 0;
+  const previewOpts = { responsive: true, maintainAspectRatio: false, animation: false };
+
+  // ── Radar preview ──
+  destroyChart('previewRadar');
+  const radarCanvas = $('previewRadar');
+  if (radarCanvas) {
+    let radarScores;
+    if (hasData) {
+      const latest = history[0];
+      radarScores = ['people', 'process', 'business'].map(d => {
+        const t = latest.domainCounts?.[d] || 0;
+        return t > 0 ? Math.round(((latest.domainCorrect?.[d] || 0) / t) * 100) : 0;
+      });
+    } else {
+      radarScores = [86, 75, 60];
+    }
+    activeCharts.previewRadar = new Chart(radarCanvas, {
+      type: 'radar',
+      data: {
+        labels: ['People', 'Process', 'Biz Env'],
+        datasets: [{
+          data: radarScores,
+          backgroundColor: `${CHART_COLORS.accent}20`,
+          borderColor: CHART_COLORS.accent,
+          borderWidth: 1.5,
+          pointBackgroundColor: [CHART_COLORS.people, CHART_COLORS.process, CHART_COLORS.business],
+          pointRadius: 3,
+        }],
+      },
+      options: {
+        ...previewOpts,
+        scales: {
+          r: {
+            min: 0, max: 100,
+            ticks: { display: false },
+            grid: { color: `${CHART_COLORS.border}60` },
+            angleLines: { color: `${CHART_COLORS.border}60` },
+            pointLabels: { font: { size: 9, weight: '600' }, color: [CHART_COLORS.people, CHART_COLORS.process, CHART_COLORS.business] },
+          },
+        },
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      },
+    });
+  }
+
+  // ── Strip preview ──
+  destroyChart('previewStrip');
+  const stripCanvas = $('previewStrip');
+  if (stripCanvas) {
+    let answers;
+    if (hasData && history[0].answers) {
+      answers = history[0].answers;
+    } else {
+      answers = Array.from({ length: 20 }, (_, i) => ({
+        correct: i < 15, domain: i < 7 ? 'people' : i < 15 ? 'process' : 'business',
+        skipped: i === 18, notReached: i === 19,
+      }));
+    }
+    const barColors = answers.map(a => {
+      if (a.notReached || a.notSubmitted || a.skipped) return `${CHART_COLORS.muted}60`;
+      return a.correct ? CHART_COLORS.green : CHART_COLORS.red;
+    });
+    const borderColors = answers.map(a => CHART_COLORS[a.domain] || CHART_COLORS.muted);
+
+    activeCharts.previewStrip = new Chart(stripCanvas, {
+      type: 'bar',
+      data: {
+        labels: answers.map((_, i) => i + 1),
+        datasets: [{ data: answers.map(() => 1), backgroundColor: barColors, borderColor: borderColors, borderWidth: 1.5, borderRadius: 1 }],
+      },
+      options: {
+        ...previewOpts,
+        indexAxis: 'x',
+        scales: { y: { display: false }, x: { display: false } },
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      },
+    });
+    stripCanvas.parentElement.style.minHeight = '100px';
+  }
+
+  // ── Trend preview ──
+  destroyChart('previewTrend');
+  const trendCanvas = $('previewTrend');
+  if (trendCanvas) {
+    let labels, overall, peoplePct, processPct, bizPct;
+    if (history.length >= 2) {
+      const list = history.slice().reverse();
+      labels = list.map(e => {
+        const d = new Date(e.endedAt);
+        return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      });
+      overall = list.map(e => e.pct);
+      peoplePct = list.map(e => { const t = e.domainCounts?.people || 0; return t > 0 ? Math.round(((e.domainCorrect?.people || 0) / t) * 100) : null; });
+      processPct = list.map(e => { const t = e.domainCounts?.process || 0; return t > 0 ? Math.round(((e.domainCorrect?.process || 0) / t) * 100) : null; });
+      bizPct = list.map(e => { const t = e.domainCounts?.business || 0; return t > 0 ? Math.round(((e.domainCorrect?.business || 0) / t) * 100) : null; });
+    } else {
+      labels = ['Wk 1', 'Wk 2', 'Wk 3'];
+      overall = sampleScores;
+      peoplePct = sampleDomain.people.correct.map((c, i) => Math.round((c / sampleDomain.people.counts[i]) * 100));
+      processPct = sampleDomain.process.correct.map((c, i) => Math.round((c / sampleDomain.process.counts[i]) * 100));
+      bizPct = sampleDomain.business.correct.map((c, i) => Math.round((c / sampleDomain.business.counts[i]) * 100));
+    }
+
+    activeCharts.previewTrend = new Chart(trendCanvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { data: overall, borderColor: CHART_COLORS.text, borderWidth: 2, fill: false, tension: 0.3, pointRadius: 2 },
+          { data: peoplePct, borderColor: CHART_COLORS.people, borderWidth: 1, borderDash: [3, 2], tension: 0.3, pointRadius: 2, spanGaps: true },
+          { data: processPct, borderColor: CHART_COLORS.process, borderWidth: 1, borderDash: [3, 2], tension: 0.3, pointRadius: 2, spanGaps: true },
+          { data: bizPct, borderColor: CHART_COLORS.business, borderWidth: 1, borderDash: [3, 2], tension: 0.3, pointRadius: 2, spanGaps: true },
+        ],
+      },
+      options: {
+        ...previewOpts,
+        scales: {
+          y: { min: 0, max: 100, ticks: { display: false }, grid: { color: `${CHART_COLORS.border}30` } },
+          x: { ticks: { font: { size: 8 } }, grid: { display: false } },
+        },
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      },
+    });
+  }
+}
+
 // ── Init ─────────────────────────────────────────────────────────────────────
 loadConfig();
 refreshPausedBanner();
 applyDeepLinkParams();
+renderPreviewCharts();
